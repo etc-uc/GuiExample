@@ -1,0 +1,542 @@
+﻿$version 10.00
+
+// This is the root component of the entire GUI application.
+$rect <20,20,220,60>
+$output false
+class Application : Core::Root
+{
+  $rect <970,0,1150,40>
+  inherited method Init()
+  {
+    $if $composer
+    Window.Bounds.origin.x = 480;
+    $endif
+  }
+
+  $rect <500,0,700,40>
+  inherited property Bounds = <0,0,480,272>;
+
+  // This is a filled rectangle view.
+  $rect <20,20,160,60>
+  object Views::Rectangle Rectangle
+  {
+    preset Bounds = <0,0,480,272>;
+    preset Color = #0009C2FF;
+  }
+
+  // This is an ordinary text view.
+  $rect <20,20,160,60>
+  object Views::Text Text
+  {
+    preset Bounds = <172,21,459,51>;
+    preset String = "Hello world!";
+    preset Font = Application::Font;
+    preset Color = #8AE9FFFF;
+  }
+
+  $rect <20,20,160,60>
+  object Views::Line Line
+  {
+    preset Point2 = <459,51>;
+    preset Point1 = <89,51>;
+    preset Width = 4;
+    preset Color = #FF3A00FF;
+  }
+
+  $rect <20,20,160,60>
+  object WidgetSet::PushButton PushButton
+  {
+    preset Bounds = <36,160,212,241>;
+    preset OnActivate = ShowWindow;
+    preset Label = "Press";
+    preset Appearance = WidgetSet::PushButton_Medium;
+  }
+
+  $rect <20,20,160,60>
+  object WidgetSet::PushButton PushButton1
+  {
+    preset Bounds = <265,160,459,241>;
+    preset OnActivate = PointEffect.StartEffect;
+    preset Label = "Caption";
+    preset Appearance = WidgetSet::PushButton_Medium;
+  }
+
+  $rect <500,90,700,130>
+  object Effects::ColorEffect ColorEffect
+  {
+    preset Symmetric = true;
+    preset Enabled = true;
+    preset Value2 = #FF0548FF;
+    preset Value1 = #85D0FFFF;
+    preset Outlet = ^Text.Color;
+  }
+
+  $rect <500,130,700,170>
+  object Effects::PointEffect PointEffect
+  {
+    preset Symmetric = true;
+    preset NoOfCycles = 1;
+    preset Value2 = <89,140>;
+    preset Value1 = <89,51>;
+    preset Outlet = ^LinePoint;
+  }
+
+  $rect <700,130,900,170>
+  property point LinePoint;
+
+  $rect <700,170,900,210>
+  onset LinePoint
+  {
+    // The value doesn't change - nothing to do.
+    if ( Line.Point1 == value )
+      return;
+
+    // Remember the property's new value.
+    Line.Point1 = value;
+    Line.Point2.y = Line.Point1.y;
+
+    // TO DO:
+    // 
+    // Now you can handle the alternation of the property.
+  }
+
+  $rect <700,210,900,250>
+  onget LinePoint
+  {
+    return Line.Point1;
+  }
+
+  $rect <20,20,160,60>
+  object Application::Window Window
+  {
+    preset Bounds = <0,0,480,272>;
+    preset Visible = false;
+  }
+
+  $rect <20,330,220,370>
+  slot ShowWindow
+  {
+    sender; /* the method is called from the sender object */
+
+    Window.Visible = true;
+
+  }
+}
+
+// To do:
+// 
+// - Open the 'Application' component for editing. It represents your entire GUI. \
+// Use widgets, views, event handlers and effects from the Gallery to assemble there \
+// your desired GUI look and feel.
+// 
+// - Create your own GUI components, widgets, panels, etc. The Gallery folder 'Component \
+// Templates' contains for this purpose various templates you can simply add to the \
+// unit and thus start your own component development.
+// 
+// - You can add your own bitmap and font resources to the unit. Use the templates \
+// 'Bitmap Resource' and 'Font Resource' from the Gallery folder 'Resources' for \
+// this purpose.
+// 
+// - You can add here also constants to store e.g. multilingual text fragments. Use \
+// for this purpose the template 'Constant' from the Gallery folder 'Chora'.
+// 
+// - To add an interface for communication with the target device use the template \
+// 'Device Interface' from the Gallery folder 'Device'.
+note legend Note1
+{
+  attr Bounds = <20,290,710,600>;
+}
+
+// This is a font resource.
+$rect <220,20,420,60>
+$output false
+resource Resources::Font Font
+{
+  attr fontname FontName = Arial;
+  attr fontheight Height = 32;
+  attr fontquality Quality = High;
+  attr fontranges Ranges = 0x20-0xFF;
+  attr fontaspectratio AspectRatio = 1.0;
+  attr fontbold Bold = false;
+  attr fontitalic Italic = false;
+  attr fontkerning Kerning = true;
+  attr fontheightmode HeightMode = Compatible;
+  attr fontrowdistance RowDistance;
+}
+
+$rect <220,60,420,100>
+$output false
+resource Resources::Font FontLarge
+{
+  attr fontname FontName = Roboto Medium;
+  attr fontheight Height = 48;
+  attr fontheightmode HeightMode = Popular;
+  attr fontquality Quality = High;
+  attr fontranges Ranges = 0x20-0xFF;
+  attr fontaspectratio AspectRatio = 1.0;
+  attr fontbold Bold = true;
+  attr fontitalic Italic = false;
+  attr fontkerning Kerning = true;
+  attr fontrowdistance RowDistance;
+}
+
+$rect <20,140,220,180>
+$output false
+class Window : Core::Group
+{
+  $rect <500,0,700,40>
+  inherited property Bounds = <0,0,480,272>;
+
+  $rect <500,90,700,130>
+  inherited method UpdateLayout()
+  {
+    // Always invoke the inherited method.
+    super( aSize );
+
+    Background.Bounds = Bounds.orect;
+  }
+
+  $rect <500,50,700,90>
+  inherited method UpdateViewState()
+  {
+    // Always invoke the inherited method.
+    super( aState );
+
+    /*
+
+      HINT 1:
+
+      This method is invoked automatically when the state set of the component has
+      been changed. The new state set can be found in the parameter aState.
+      Following are the important states:
+
+        Enabled   --> The component can react to user inputs.
+
+        Selected  --> The component is selected in context of its owner.
+
+        Focused   --> The component is selected in context of its owner and 
+                      the owner can react to keyboard events. In this manner the
+                      component is also able to react to keyboard events.
+
+        Modal     --> The component is modal. All events are redirected to this
+                      component.
+
+      To determine whether a state is currently active or not you have to test
+      the aState parameter. For example to test the 'Selected' state:
+
+        if ( aState.contains( Core::ViewState[ Selected ]))
+        {
+          ... yes, this component is currently selected.
+        }
+
+    */
+
+    /*
+
+      HINT 2:
+
+      Alternatively you can request this method invocation by executing explicitly
+      following code:
+
+
+        InvalidateViewState();
+
+    */
+      
+    /*
+
+      TO DO 1:
+
+      Put here the code to ensure that the visual aspect of the component does
+      reflect its current state. For example, depending on its 'Enabled' state
+      a component may appear with full colors or pale if it is disabled:
+
+        if ( aState.contains( Core::ViewState[ Enabled ]))
+        {
+          SomeBackgroundView.Opacity = 255;
+          SomeTextView.Color         = #000000FF;
+        }
+        else
+        {
+          SomeBackgroundView.Opacity = 128;
+          SomeTextView.Color         = #00000080;
+        }
+
+
+      TO DO 2:
+
+      You can evaluate here also the state of any other member in your component.
+      For example in a push-button component, the button should appear highlighted
+      as long as the user holds the finger within a touch area of the button:
+
+        if ( SomeTouchHandler.Down && SomeTouchHandler.Inside )
+          HighlightedBackground.Visible = true;
+        else
+          HighlightedBackground.Visible = false;
+
+      The touch handler itself only requests the update method to be called. Use
+      for this purpose 'InvalidateViewState()' method.
+
+
+      TO DO 3:
+
+      You can calculate here also the position/size of views accordingly to the
+      state of any other member in your component. For example in a slider you
+      can calculate the position of the slider knob from some properties like
+      'SliderValue' and 'SliderRange':
+
+        SliderKnob.Bounds.origin.x = ( SliderValue * Bounds.w ) / SliderRange;
+
+      Changing the 'SliderValue' or 'SliderRange' property should only request
+      the update method to be called. Use for this purpose 'InvalidateViewState()'
+      method.
+
+    */
+  }
+
+  $rect <20,20,160,60>
+  object Views::Rectangle Background
+  {
+    preset Bounds = <93,108,193,208>;
+    preset Color = #33388DFF;
+  }
+
+  $rect <20,20,160,60>
+  object Views::Line Line
+  {
+    preset Point2 = <331,22>;
+    preset Point1 = <17,22>;
+    preset Width = 3;
+  }
+
+  $rect <20,20,160,60>
+  object WidgetSet::ValueDisplay ValueDisplay
+  {
+    preset Bounds = <156,202,356,264>;
+    preset Outlet = ^Temperature;
+    preset Unit = "°C";
+    preset Precision = 1;
+    preset Appearance = Application::VDConfig;
+  }
+
+  $rect <500,200,700,240>
+  property int32 Temperature = 10;
+
+  $rect <500,240,700,280>
+  onset Temperature
+  {
+    if ( value < -40 )
+      value = -40;
+    if ( value > 60 )
+      value = 60;
+
+    // The value doesn't change - nothing to do.
+    if ( pure Temperature == value )
+      return;
+
+    // Remember the property's new value.
+    pure Temperature = value;
+
+    notifyobservers ^Temperature;
+
+  }
+
+  $rect <700,200,900,240>
+  object Effects::Int32Effect Int32Effect
+  {
+    preset Symmetric = true;
+    preset CycleDuration = 10000;
+    preset Enabled = true;
+    preset Value2 = 60;
+    preset Value1 = -40;
+    preset Outlet = ^Temperature;
+  }
+
+  $rect <20,20,160,60>
+  object Views::Image Image
+  {
+    preset Bounds = <17,208,67,258>;
+    preset FrameNumber = 12;
+    preset Bitmap = Resources::NavigationIconsLarge;
+  }
+
+  $rect <0,310,200,350>
+  slot Hide
+  {
+    sender; /* the method is called from the sender object */
+
+    Visible = false;
+
+  }
+
+  $rect <20,20,160,60>
+  object Core::SimpleTouchHandler SimpleTouchHandler
+  {
+    preset Point4 = <17,208>;
+    preset Point3 = <67,208>;
+    preset Point2 = <67,258>;
+    preset Point1 = <17,258>;
+    preset OnPress = Hide;
+  }
+
+  $rect <20,20,160,60>
+  object Application::Thermometer Thermometer
+  {
+    preset Bounds = <384,0,480,272>;
+    preset Outlet = ^Temperature;
+  }
+
+  $rect <20,20,160,60>
+  object Views::Text Text
+  {
+    preset Bounds = <17,31,268,61>;
+    preset String = "Temperature monitor";
+    preset Font = Application::Font;
+  }
+}
+
+// This autoobject provides the default customization for the 'value display' widget \
+// (WidgetSet::ValueDisplay) in its medium size variant. Widgets using this configuration \
+// display the value and unit aligned at the right widget edge.
+$rect <220,140,520,180>
+$output false
+autoobject WidgetSet::ValueDisplayConfig VDConfig
+{
+  preset ValueMarginRight = 10;
+  preset ValueColorNegative = #8BBAFFFF;
+  preset ValueColorPositive = #E62000FF;
+  preset ValueAlignment = Views::TextAlignment[AlignHorzRight, AlignVertCenter];
+  preset ValueFont = Application::FontLarge;
+  preset UnitColorNegative = #C4C6C9FF;
+  preset UnitColorPositive = #C4C6C9FF;
+  preset UnitAlignment = Views::TextAlignment[AlignHorzRight, AlignVertCenter];
+  preset UnitFont = Application::FontLarge;
+  preset FormatPlusSign = "";
+  preset Layout = WidgetSet::ValueDisplayLayout.AlignValueLeftToUnit;
+  preset WidgetMinSize = <60,32>;
+}
+
+$rect <540,20,740,60>
+$output false
+class Thermometer : Core::Group
+{
+  $rect <310,0,490,40>
+  inherited onset Bounds
+  {
+    value.size = Application::Bitmap.FrameSize;
+
+    super(value);
+  }
+
+  $rect <110,0,310,40>
+  inherited property Bounds = <0,0,300,200>;
+
+  $rect <110,80,310,120>
+  inherited method UpdateLayout()
+  {
+    // Always invoke the inherited method.
+    super( aSize );
+
+
+  }
+
+  $rect <110,40,310,80>
+  inherited method UpdateViewState()
+  {
+    // Always invoke the inherited method.
+    super( aState );
+
+    var rect bounds = Bounds.orect;
+
+    bounds.y2 = 22 + ( 60 - Temperature ) * 184 / 100;
+    ImageEmpty.Bounds = bounds;
+
+    bounds.y1 = bounds.y2;
+    bounds.y2 = Bounds.h;
+    ImageFull.Bounds = bounds;
+  }
+
+  $rect <110,150,310,190>
+  property int32 Temperature = 25;
+
+  $rect <110,190,310,230>
+  onset Temperature
+  {
+    if ( value < -40 )
+      value = -40;
+    if ( value > 60 )
+      value = 60;
+
+    // The value doesn't change - nothing to do.
+    if ( pure Temperature == value )
+      return;
+
+    // Remember the property's new value.
+    pure Temperature = value;
+
+    InvalidateViewState();
+
+  }
+
+  $rect <20,20,160,60>
+  object Views::Image ImageEmpty
+  {
+    preset Bounds = <0,0,96,272>;
+    preset Alignment = Views::ImageAlignment[AlignHorzCenter, AlignVertTop];
+    preset Bitmap = Application::Bitmap;
+  }
+
+  $rect <20,20,160,60>
+  object Views::Image ImageFull
+  {
+    preset Bounds = <0,0,96,272>;
+    preset Alignment = Views::ImageAlignment[AlignHorzCenter, AlignVertBottom];
+    preset FrameNumber = 1;
+    preset Bitmap = Application::Bitmap;
+  }
+
+  $rect <310,150,510,190>
+  property ^int32 Outlet;
+
+  $rect <310,190,510,230>
+  onset Outlet
+  {
+    // The value doesn't change - nothing to do.
+    if ( pure Outlet == value )
+      return;
+
+    if ( pure Outlet != null )
+      detachobserver onOutlet, pure Outlet;
+
+    // Remember the property's new value.
+    pure Outlet = value;
+
+    if ( value != null )
+    {
+      attachobserver onOutlet, value;
+      postsignal onOutlet;
+    }
+
+  }
+
+  $rect <510,150,710,190>
+  slot onOutlet
+  {
+    sender; /* the method is called from the sender object */
+
+    if ( Outlet != null )
+      Temperature = Outlet^;
+  }
+}
+
+$rect <740,20,940,60>
+$output false
+resource Resources::Bitmap Bitmap
+{
+  attr bitmapfile FileName = .\Res\thermo.png;
+  attr bitmapformat Format = Native;
+  attr framesize FrameSize = <96,272>;
+  attr framedelay FrameDelay;
+  attr bitmapdithering Dithering = Auto;
+  attr bitmapmode Mode = Default;
+}
