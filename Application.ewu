@@ -1,4 +1,4 @@
-﻿$version 10.00
+﻿$version 11.00
 
 // This is the root component of the entire GUI application.
 $rect <20,20,220,60>
@@ -184,6 +184,14 @@ $rect <20,140,220,180>
 $output false
 class Window : Core::Group
 {
+  $rect <700,0,880,40>
+  inherited method Init()
+  {
+    uc.pinMode( 16, Wiring::PinModes.INPUT_ANALOG );
+
+    DHT11.uc = uc;
+  }
+
   $rect <500,0,700,40>
   inherited property Bounds = <0,0,480,272>;
 
@@ -304,7 +312,7 @@ class Window : Core::Group
   $rect <20,20,160,60>
   object Views::Line Line
   {
-    preset Point2 = <331,22>;
+    preset Point2 = <268,22>;
     preset Point1 = <17,22>;
     preset Width = 3;
   }
@@ -312,7 +320,7 @@ class Window : Core::Group
   $rect <20,20,160,60>
   object WidgetSet::ValueDisplay ValueDisplay
   {
-    preset Bounds = <156,202,356,264>;
+    preset Bounds = <17,74,217,136>;
     preset Outlet = ^Temperature;
     preset Unit = "°C";
     preset Precision = 1;
@@ -325,10 +333,10 @@ class Window : Core::Group
   $rect <500,240,700,280>
   onset Temperature
   {
-    if ( value < -40 )
-      value = -40;
-    if ( value > 60 )
-      value = 60;
+    if ( value < -55 )
+      value = -55;
+    if ( value > 125 )
+      value = 125;
 
     // The value doesn't change - nothing to do.
     if ( pure Temperature == value )
@@ -339,17 +347,6 @@ class Window : Core::Group
 
     notifyobservers ^Temperature;
 
-  }
-
-  $rect <700,200,900,240>
-  object Effects::Int32Effect Int32Effect
-  {
-    preset Symmetric = true;
-    preset CycleDuration = 10000;
-    preset Enabled = true;
-    preset Value2 = 60;
-    preset Value1 = -40;
-    preset Outlet = ^Temperature;
   }
 
   $rect <20,20,160,60>
@@ -382,7 +379,7 @@ class Window : Core::Group
   $rect <20,20,160,60>
   object Application::Thermometer Thermometer
   {
-    preset Bounds = <384,0,480,272>;
+    preset Bounds = <288,0,384,272>;
     preset Outlet = ^Temperature;
   }
 
@@ -393,6 +390,99 @@ class Window : Core::Group
     preset String = "Temperature monitor";
     preset Font = Application::Font;
   }
+
+  $rect <700,200,900,240>
+  object Wiring::Core uc;
+
+  $rect <700,160,900,200>
+  object Core::Timer Timer
+  {
+    preset OnTrigger = UpdateTemperature;
+    preset Enabled = true;
+  }
+
+  $rect <900,160,1100,200>
+  slot UpdateTemperature
+  {
+    sender; /* the method is called from the sender object */
+
+    var int32 adc = (int32)uc.analogRead( 16 );
+
+    var int32 i = 0;
+    while ( i < LUT.size )
+    {
+      if ( adc > LUT[i] )
+        break;
+      i = i + 1;
+    }
+
+    if ( i == 0 )
+      Temperature = -55;
+    else if ( i == LUT.size )
+      Temperature = 125;
+    else
+    {
+      trace "ADC value: ", adc, "i", i, "LUT[i]", LUT[i], "LUT[i-1]", LUT[i-1];
+
+      Temperature = uc.map( adc, LUT[i], LUT[i-1] , i * 5 - 55, i * 5 - 60 );
+    }
+
+
+    DHT11.Read = true;
+
+  }
+
+  $rect <900,120,1100,160>
+  array int32 LUT[ 37 ] =
+  (
+    Default[0] = 4049;
+    Default[1] = 4030;
+    Default[2] = 4006;
+    Default[3] = 3973;
+    Default[4] = 3930;
+    Default[5] = 3875;
+    Default[6] = 3805;
+    Default[7] = 3716;
+    Default[8] = 3609;
+    Default[9] = 3481;
+    Default[10] = 3325;
+    Default[11] = 3137;
+    Default[12] = 2952;
+    Default[13] = 2741;
+    Default[14] = 2511;
+    Default[15] = 2276;
+    Default[16] = 2048;
+    Default[17] = 1815;
+    Default[18] = 1599;
+    Default[19] = 1397;
+    Default[20] = 1210;
+    Default[21] = 1043;
+    Default[22] = 893;
+    Default[23] = 762;
+    Default[24] = 650;
+    Default[25] = 554;
+    Default[26] = 472;
+    Default[27] = 401;
+    Default[28] = 342;
+    Default[29] = 292;
+    Default[30] = 249;
+    Default[31] = 214;
+    Default[32] = 183;
+    Default[33] = 157;
+    Default[34] = 136;
+    Default[35] = 117;
+    Default[36] = 102;
+  );
+
+  $rect <20,20,160,60>
+  object Application::Thermometer ThermometerD
+  {
+    preset Bounds = <384,0,480,272>;
+    preset Outlet = ^DHT11.Temperature;
+  }
+
+  $rect <900,240,1100,280>
+  object Application::DHT11 DHT11;
 }
 
 // This autoobject provides the default customization for the 'value display' widget \
@@ -448,7 +538,7 @@ class Thermometer : Core::Group
 
     var rect bounds = Bounds.orect;
 
-    bounds.y2 = 22 + ( 60 - Temperature ) * 184 / 100;
+    bounds.y2 = 22 + ( 125 - Temperature ) * 184 / 180;
     ImageEmpty.Bounds = bounds;
 
     bounds.y1 = bounds.y2;
@@ -462,10 +552,10 @@ class Thermometer : Core::Group
   $rect <110,190,310,230>
   onset Temperature
   {
-    if ( value < -40 )
-      value = -40;
-    if ( value > 60 )
-      value = 60;
+    if ( value < -55 )
+      value = -55;
+    if ( value > 125 )
+      value = 125;
 
     // The value doesn't change - nothing to do.
     if ( pure Temperature == value )
@@ -473,6 +563,7 @@ class Thermometer : Core::Group
 
     // Remember the property's new value.
     pure Temperature = value;
+    Text.String = string(value) + "°C";
 
     InvalidateViewState();
 
@@ -527,6 +618,14 @@ class Thermometer : Core::Group
     if ( Outlet != null )
       Temperature = Outlet^;
   }
+
+  $rect <20,20,160,60>
+  object Views::Text Text
+  {
+    preset Bounds = <24,206,72,254>;
+    preset String = "25°C";
+    preset Font = Resources::FontSmall;
+  }
 }
 
 $rect <740,20,940,60>
@@ -539,4 +638,135 @@ resource Resources::Bitmap Bitmap
   attr framedelay FrameDelay;
   attr bitmapdithering Dithering = Auto;
   attr bitmapmode Mode = Default;
+}
+
+$rect <230,210,430,250>
+inline dht11_native
+{
+  #include <stm32f7xx_hal.h>
+
+  void initiate_DHT11_counting(ApplicationDHT11 aThis);
+  void cancel_DHT11_counting();
+
+}
+
+$rect <20,210,220,250>
+$output false
+class DHT11
+{
+  $rect <200,0,400,40>
+  var Wiring::Core uc;
+
+  $rect <0,130,200,170>
+  property int32 Temperature;
+
+  $rect <0,170,200,210>
+  onset Temperature
+  {
+    // do not allow setting it from outside
+
+  }
+
+  $rect <200,130,400,170>
+  property int32 Humidity;
+
+  $rect <200,170,400,210>
+  onset Humidity
+  {
+    // do not allow setting from outside
+  }
+
+  // Initialize a reading operation from the sensor.
+  $rect <0,0,200,40>
+  property bool Read;
+
+  $rect <0,40,200,80>
+  onset Read
+  {
+    // The value doesn't change - nothing to do.
+    if ( pure Read == value )
+      return;
+
+    if ( value )
+    {
+      // when starting to read
+      pure Read = value;
+
+      uc.pinMode( 10, Wiring::PinModes.OUTPUT_OD );
+      uc.digitalWrite( 10, false );
+      Timer.Enabled = true;
+    }
+    else
+    {
+    // TO DO:
+    // 
+    // Now you can handle the alternation of the property.
+      pure Read = value;
+
+      native
+      {
+        cancel_DHT11_counting();
+      }
+    }
+  }
+
+  $rect <400,0,600,40>
+  object Core::Timer Timer
+  {
+    preset OnTrigger = startReceive;
+    preset Period = 0;
+    preset Begin = 18;
+  }
+
+  $rect <400,40,600,80>
+  slot startReceive
+  {
+    uc.digitalWrite( 10, true );
+    var int32 ic_alternate;
+    native ( ic_alternate )
+    {
+      ic_alternate = GPIO_AF1_TIM1;
+    }
+    uc.pins.Pin( 10 ).SetAlternateFunction( Wiring::PinModes.ALTERNATE_FUNCTION_OD, ic_alternate, ^Read );
+    native
+    {
+      initiate_DHT11_counting(_this);
+    }
+    Timeout.Enabled = true;
+
+  }
+
+  $rect <400,80,600,120>
+  $output true
+  method void receiveFinished( arg bool aSuccess, arg int32 aTemperature, arg int32 aHumidity )
+  {
+    if ( aSuccess )
+    {
+      pure Temperature = aTemperature;
+      notifyobservers ^Temperature;
+      pure Humidity = aHumidity;
+      notifyobservers ^Humidity;
+    }
+
+    pure Read = false;
+    uc.pinMode( 10, Wiring::PinModes.OUTPUT_OD );
+    Timeout.Enabled = false;
+
+  }
+
+  $rect <600,0,800,40>
+  object Core::Timer Timeout
+  {
+    preset OnTrigger = stopReceive;
+    preset Period = 0;
+    preset Begin = 250;
+  }
+
+  $rect <600,40,800,80>
+  slot stopReceive
+  {
+    sender; /* the method is called from the sender object */
+
+    uc.pinMode( 10, Wiring::PinModes.OUTPUT_OD );
+  }
 }
